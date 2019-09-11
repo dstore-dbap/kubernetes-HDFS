@@ -195,3 +195,48 @@ data:
         <value>{{ template "datanode-data-dirs" . }}</value>
       </property>
     </configuration>
+  telegraf.conf: |
+    [[outputs.influxdb]]
+      urls = ["http://localhost:8086"]
+      database = "k8s"
+
+    [[inputs.jolokia2_agent]]
+      urls = ["http://localhost:8778/jolokia"]
+
+      [[inputs.jolokia2_agent.metric]]
+        name  = "jvm_operating_system"
+        mbean = "java.lang:type=OperatingSystem"
+        paths = ["ProcessCpuLoad","SystemLoadAverage","SystemCpuLoad"]
+
+      [[inputs.jolokia2_agent.metric]]
+        name  = "jvm_runtime"
+        mbean = "java.lang:type=Runtime"
+        paths = ["Uptime"]
+
+      [[inputs.jolokia2_agent.metric]]
+        name  = "jvm_memory"
+        mbean = "java.lang:type=Memory"
+        paths = ["HeapMemoryUsage", "NonHeapMemoryUsage", "ObjectPendingFinalizationCount"]
+
+      [[inputs.jolokia2_agent.metric]]
+        name     = "jvm_garbage_collector"
+        mbean    = "java.lang:name=*,type=GarbageCollector"
+        paths    = ["CollectionTime", "CollectionCount"]
+        tag_keys = ["name"]
+
+      [[inputs.jolokia2_agent.metric]]
+        name       = "jvm_memory_pool"
+        mbean      = "java.lang:name=*,type=MemoryPool"
+        paths      = ["Usage", "PeakUsage", "CollectionUsage"]
+        tag_keys   = ["name"]
+        tag_prefix = "pool_"
+
+      [[inputs.jolokia2_agent.metrics]]
+        name  = "jvm_threading"
+        mbean = "java.lang:type=Threading"
+        paths = ["TotalStartedThreadCount", "ThreadCount", "DaemonThreadCount", "PeakThreadCount"]
+
+      [[inputs.jolokia2_agent.metrics]]
+        name  = "jvm_class_loading"
+        mbean = "java.lang:type=ClassLoading"
+        paths = ["LoadedClassCount", "UnloadedClassCount", "TotalLoadedClassCount"]

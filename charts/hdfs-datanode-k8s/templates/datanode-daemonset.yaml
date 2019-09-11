@@ -43,6 +43,8 @@ metadata:
     chart: {{ template "hdfs-k8s.subchart" . }}
     release: {{ .Release.Name }}
 spec:
+  updateStrategy:
+    type: "RollingUpdate"
   template:
     metadata:
       labels:
@@ -84,6 +86,8 @@ spec:
               value: /etc/hadoop-custom-conf
             - name: MULTIHOMED_NETWORK
               value: "0"
+            - name: HADOOP_OPTS
+              value: {{ .Values.hadoopOpts }}
             {{- if and .Values.global.kerberosEnabled .Values.global.jsvcEnabled }}
             - name: HADOOP_SECURE_DN_USER
               value: root
@@ -115,6 +119,9 @@ spec:
             - name: hdfs-config
               mountPath: /etc/hadoop-custom-conf
               readOnly: true
+            - name: additional-jars
+              mountPath: /jars
+              readOnly: true
             {{- range $index, $path := .Values.global.dataNodeHostPath }}
             - name: hdfs-data-{{ $index }}
               mountPath: /hadoop/dfs/data/{{ $index }}
@@ -132,8 +139,24 @@ spec:
               mountPath: /jsvc-home
             {{- end }}
             {{- end }}
-      {{- if .Values.global.kerberosEnabled }}
+        - name: hdfs-datanode-telegraf
+          image: telegraf:1.10.3-alpine
+          volumeMounts:
+            - name: hdfs-config
+              mountPath: /etc/telegraf
+              readOnly: true
+      # Get us the Jolokia JAR for telegraf monitoring
+      # TODO: Maybe we should extend the docker-image, so it includes jolokia already?
       initContainers:
+        - name: wget-jolokia
+          image: busybox:1.27.1
+          command: ['sh', '-c']
+          args:
+            - wget http://search.maven.org/maven2/org/jolokia/jolokia-jvm/1.6.2/jolokia-jvm-1.6.2-agent.jar -O /jars/jolokia.jar
+          volumeMounts:
+            - name: additional-jars
+              mountPath: /jars
+      {{- if .Values.global.kerberosEnabled }}
         - name: copy-kerberos-keytab
           image: busybox:1.27.1
           command: ['sh', '-c']
@@ -175,6 +198,8 @@ spec:
         - name: hdfs-config
           configMap:
             name: {{ template "hdfs-k8s.config.fullname" . }}
+        - name: additional-jars
+          emptyDir: {}
         {{- if .Values.global.kerberosEnabled }}
         - name: kerberos-config
           configMap:

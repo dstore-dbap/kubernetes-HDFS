@@ -121,6 +121,8 @@ metadata:
 spec:
   serviceName: {{ template "hdfs-k8s.namenode.fullname" . }}
   replicas: 2
+  updateStrategy:
+    type: "RollingUpdate"
   template:
     metadata:
       labels:
@@ -179,6 +181,8 @@ spec:
               value: /etc/hadoop-custom-conf
             - name: MULTIHOMED_NETWORK
               value: "0"
+            - name: HADOOP_OPTS
+              value: {{ .Values.hadoopOpts }}
             # Used by the start script below.
             - name: MY_POD
               valueFrom:
@@ -197,6 +201,8 @@ spec:
             name: fs
           - containerPort: 50070
             name: http
+          - containerPort: 8778
+            name: jolokia
           volumeMounts:
             - name: nn-scripts
               mountPath: /nn-scripts
@@ -210,6 +216,9 @@ spec:
             - name: hdfs-config
               mountPath: /etc/hadoop-custom-conf
               readOnly: true
+            - name: additional-jars
+              mountPath: /jars
+              readOnly: true
             {{- if .Values.global.kerberosEnabled }}
             - name: kerberos-config
               mountPath: /etc/krb5.conf
@@ -219,8 +228,23 @@ spec:
               mountPath: /etc/security/
               readOnly: true
             {{- end }}
-      {{- if .Values.global.kerberosEnabled }}
+        - name: hdfs-namenode-telegraf
+          image: telegraf:1.10.3-alpine
+          volumeMounts:
+            - name: hdfs-config
+              mountPath: /etc/telegraf
+              readOnly: true
+      # TODO: Maybe we should extend the docker-image, so it includes jolokia already?
       initContainers:
+        - name: wget-jolokia
+          image: busybox:1.27.1
+          command: ['sh', '-c']
+          args:
+            - wget http://search.maven.org/maven2/org/jolokia/jolokia-jvm/1.6.2/jolokia-jvm-1.6.2-agent.jar -O /jars/jolokia.jar
+          volumeMounts:
+            - name: additional-jars
+              mountPath: /jars
+      {{- if .Values.global.kerberosEnabled }}
         - name: copy-kerberos-keytab
           image: busybox:1.27.1
           command: ['sh', '-c']
@@ -250,6 +274,8 @@ spec:
         - name: hdfs-config
           configMap:
             name: {{ template "hdfs-k8s.config.fullname" . }}
+        - name: additional-jars
+          emptyDir: {}
         {{- if .Values.global.kerberosEnabled }}
         - name: kerberos-config
           configMap:
