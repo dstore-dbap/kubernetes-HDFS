@@ -196,9 +196,14 @@ data:
       </property>
     </configuration>
   telegraf.conf: |
+    [global_tags]
+      cluster = "{{.Values.global.monitoring.clusterName}}"
+      namespace = "${K8S_NAMESPACE}"
+      application = "${APPLICATION}"
+
     [[outputs.influxdb]]
-      urls = ["http://localhost:8086"]
-      database = "k8s"
+      urls = {{ .Values.global.monitoring.influxUrls }}
+      database = "{{ .Values.global.monitoring.database }}"
 
     [[inputs.jolokia2_agent]]
       urls = ["http://localhost:$JOLOKIA_PORT/jolokia"]

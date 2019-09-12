@@ -194,6 +194,11 @@ global:
   dataNodeHostPath:
     - /hdfs-data
 
+  monitoring:
+    influxUrls: "[\"http://localhost:8086\"]"
+    database: "k8s"
+    clusterName: "bigdata"
+
   ## Parameters for determining which Unix user and group IDs to use in pods.
   ## Persistent volume permission may need to match these.
   podSecurityContext:
