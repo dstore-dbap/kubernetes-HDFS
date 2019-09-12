@@ -131,6 +131,9 @@ spec:
             {{- end }}
         - name: hdfs-journalnode-telegraf
           image: telegraf:1.10.3-alpine
+          env:
+            - name: JOLOKIA_PORT
+              value: "{{ .Values.monitoring.jolokiaPort }}"
           volumeMounts:
             - name: hdfs-config
               mountPath: /etc/telegraf

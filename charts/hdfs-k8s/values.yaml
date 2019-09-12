@@ -32,7 +32,10 @@ hdfs-config-k8s:
 ## ------------------------------------------------------------------------------
 hdfs-journalnode-k8s:
 
-  hadoopOpts: -javaagent:/jars/jolokia.jar=host=*
+  hadoopOpts: -javaagent:/jars/jolokia.jar=port=8010,host=localhost
+
+  monitoring:
+    jolokiaPort: 8010
 
   persistence:
     ## Persistent Volume Storage Class
@@ -73,7 +76,10 @@ hdfs-namenode-k8s:
     echo This message will disappear in 10 seconds.
     sleep 10
 
-  hadoopOpts: -javaagent:/jars/jolokia.jar=host=*
+  hadoopOpts: -javaagent:/jars/jolokia.jar=port=8011,host=localhost
+
+  monitoring:
+    jolokiaPort: 8011
 
   persistence:
     ## Persistent Volume Storage Class
@@ -125,7 +131,10 @@ hdfs-simple-namenode-k8s:
 ## ------------------------------------------------------------------------------
 hdfs-datanode-k8s:
 
-  hadoopOpts: -javaagent:/jars/jolokia.jar=host=*
+  hadoopOpts: -javaagent:/jars/jolokia.jar=port=8012,host=localhost
+
+  monitoring:
+    jolokiaPort: 8012
 
   ## Node labels and tolerations for pod assignment
   nodeSelector: {}
